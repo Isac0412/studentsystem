@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考生资料查询系统</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 320px;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      input[type="text"], button {
+        font-size: 15px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>考生资料查询</h2>
+    <input type="text" id="examId" placeholder="请输入考生号">
+    <button id="searchBtn" onclick="searchStudent()">查询</button>
+    <div class="result" id="result"></div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    const students = {
+      "E001": { ic: "070124-73-7479", class: "4C", subject: "科学", seat: 1 },
+      "E002": { ic: "051110-33-1969", class: "5A", subject: "地理", seat: 2 },
+      "E003": { ic: "901128-72-8259", class: "4A", subject: "地理", seat: 3 },
+      "E004": { ic: "081220-50-7709", class: "4A", subject: "科学", seat: 4 },
+      "E005": { ic: "860327-79-9627", class: "5A", subject: "历史", seat: 5 },
+      "E006": { ic: "981011-89-6841", class: "4C", subject: "历史", seat: 6 },
+      "E007": { ic: "070513-96-3541", class: "4B", subject: "地理", seat: 7 },
+      "E008": { ic: "070925-56-3392", class: "4B", subject: "地理", seat: 8 },
+      "E009": { ic: "081207-24-5271", class: "5A", subject: "历史", seat: 9 },
+      "E010": { ic: "080313-92-7175", class: "4A", subject: "历史", seat: 10 },
+      "E011": { ic: "070722-63-2003", class: "4A", subject: "数学", seat: 11 },
+      "E012": { ic: "050316-01-2269", class: "5B", subject: "数学", seat: 12 },
+      "E013": { ic: "051112-31-8644", class: "4B", subject: "英语", seat: 13 },
+      "E014": { ic: "050406-91-9981", class: "4B", subject: "英语", seat: 14 },
+      "E015": { ic: "050606-89-1561", class: "4B", subject: "历史", seat: 15 },
+      "E016": { ic: "050412-97-0371", class: "4A", subject: "地理", seat: 16 },
+      "E017": { ic: "050903-62-1164", class: "5A", subject: "科学", seat: 17 },
+      "E018": { ic: "050903-75-3895", class: "4C", subject: "数学", seat: 18 },
+      "E019": { ic: "050904-45-6651", class: "4A", subject: "科学", seat: 19 },
+      "E020": { ic: "050922-29-1356", class: "5B", subject: "历史", seat: 20 },
+      "E021": { ic: "050111-46-2216", class: "4B", subject: "历史", seat: 21 },
+      "E022": { ic: "050122-44-9753", class: "4A", subject: "地理", seat: 22 },
+      "E023": { ic: "051127-12-1113", class: "4C", subject: "地理", seat: 23 },
+      "E024": { ic: "050307-26-7658", class: "4B", subject: "历史", seat: 24 },
+      "E025": { ic: "050806-14-7858", class: "5A", subject: "历史", seat: 25 },
+      "E026": { ic: "050421-43-7840", class: "4A", subject: "数学", seat: 26 },
+      "E027": { ic: "050116-68-4583", class: "5A", subject: "科学", seat: 27 },
+      "E028": { ic: "050411-71-5164", class: "5A", subject: "英语", seat: 28 },
+      "E029": { ic: "050424-43-1742", class: "4A", subject: "地理", seat: 29 },
+      "E030": { ic: "050422-49-8160", class: "4B", subject: "英语", seat: 30 }
+    };
+
+    let attemptCount = 0;
+
+    function searchStudent() {
+      const examIdInput = document.getElementById("examId");
+      const examId = examIdInput.value.trim().toUpperCase();
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      const searchBtn = document.getElementById("searchBtn");
+
+      resultDiv.innerHTML = "";
+      errorDiv.innerText = "";
+
+      if (attemptCount >= 7) {
+        errorDiv.innerText = "⚠️ 已达最大查询次数（7次），无法继续查询。";
+        alert("⛔ 您已用完全部7次查询机会！");
+        searchBtn.disabled = true;
+        return;
+      }
+
+      if (students[examId]) {
+        const student = students[examId];
+        resultDiv.innerHTML = `
+          <p><strong>考生号：</strong>${examId}</p>
+          <p><strong>身份证号：</strong>${student.ic}</p>
+          <p><strong>班级：</strong>${student.class}</p>
+          <p><strong>考试科目：</strong>${student.subject}</p>
+          <p><strong>座位号：</strong>${student.seat}</p>
+        `;
+        attemptCount++;
+        alert("查询成功，您还剩下 " + (7 - attemptCount) + " 次查询机会");
+      } else {
+        errorDiv.innerText = "找不到该考生号，请检查输入（格式应为 E001 至 E030）。";
+        attemptCount++;
+        alert("查询失败，您还剩下 " + (7 - attemptCount) + " 次查询机会。");
+      }
+
+      if (attemptCount >= 7) {
+        searchBtn.disabled = true;
+        alert("⚠️ 您已使用完全部7次查询机会！");
+      }
+
+      examIdInput.value = "";
+      examIdInput.focus();
+    }
+  </script>
+</body>
+</html>
